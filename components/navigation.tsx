@@ -52,7 +52,7 @@ function Navigation() {
         </div>
 
         <div className="flex items-center gap-4">
-          {(user?.email == "admin123@gmail.com" || user) ? (
+          {(user?.email != "admin123@gmail.com") ? (
             <div className="flex items-center gap-3 pl-2 border-slate-200">
               <button
                 id="nav-to-dashboard-btn"
