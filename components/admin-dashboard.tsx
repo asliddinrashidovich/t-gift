@@ -5,20 +5,16 @@ import { Briefcase, Gift, Server, LogOut } from "lucide-react";
 
 import TariffManagement from "./tariffManagement";
 import GiftApplications from "./giftApplications";
-import TelegramIntegration from "./telegramIntegration";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"tariffs" | "gifts" | "telegram">(
-    "tariffs",
-  );
+  const [activeTab, setActiveTab] = useState<"tariffs" | "gifts">("tariffs");
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navItems = [
     { id: "tariffs", label: "Tariff Plan Publisher", icon: Briefcase },
     { id: "gifts", label: "Gift Approval Desk", icon: Gift },
-    { id: "telegram", label: "Telegram Webhook Setup", icon: Server },
   ];
   const onLogout = async () => {
     try {
@@ -111,7 +107,6 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
           {activeTab === "tariffs" && <TariffManagement />}
           {activeTab === "gifts" && <GiftApplications />}
-          {activeTab === "telegram" && <TelegramIntegration />}
         </div>
       </main>
     </div>
