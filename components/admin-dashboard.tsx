@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         return;
       }
 
-      router.replace("/login");
+      router.replace("/admin/login");
       router.refresh();
     } catch (err) {
       console.error(err);
