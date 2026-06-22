@@ -141,15 +141,6 @@ export default function AdminLogin() {
                 </div>
               )}
 
-              <div className="p-3 bg-slate-900/50 border border-slate-800/85 rounded-xl text-slate-400 text-[11px] leading-relaxed">
-                <span className="font-bold text-slate-300 block mb-1">
-                  Admin Access
-                </span>
-                <p>
-                  Enter administrator credentials configured in Supabase
-                  Authentication.
-                </p>
-              </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   id="admin-login-submit-btn"
