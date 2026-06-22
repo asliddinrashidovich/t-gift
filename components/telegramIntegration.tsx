@@ -9,28 +9,14 @@ import {
   Clock,
   Layers,
 } from "lucide-react";
-import { initialAuditLogs } from "../data";
 
-interface TelegramIntegrationProps {
-  config: TelegramConfig;
-  onUpdateConfig: (updated: Partial<TelegramConfig>) => void;
-  auditLogs: NotificationAuditLog[];
-}
-
-export default function TelegramIntegration({
-  config,
-  onUpdateConfig,
-}: TelegramIntegrationProps) {
-  const [token, setToken] = useState(config?.botToken);
+export default function TelegramIntegration() {
   const [chatId, setChatId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [connectStatus, setConnectStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
   const [feedbackMsg, setFeedbackMsg] = useState("");
-
-  const [auditLogs, setAuditLogs] =
-    useState<NotificationAuditLog[]>(initialAuditLogs);
 
   const [botToken, setBotToken] = useState("");
 
@@ -44,44 +30,6 @@ export default function TelegramIntegration({
         botToken,
       }),
     });
-  };
-
-  const handleConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token.trim() || !token.includes(":")) {
-      setConnectStatus("error");
-      setFeedbackMsg(
-        "Malformed token: Ensure the input conforms to Telegram Botfather specs (e.g. 123456789:ABCdefGhIJKlmNoPQ_RStuvW).",
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    setConnectStatus("idle");
-
-    setTimeout(() => {
-      setIsLoading(false);
-      // Simulate validation handshake
-      if (token.includes("invalid") || token.trim().length < 20) {
-        setConnectStatus("error");
-        setFeedbackMsg(
-          "Handshake Failed: Bot API token could not be resolved or was recently revoked by Telegram Father.",
-        );
-        onUpdateConfig({ isConnected: false });
-      } else {
-        setConnectStatus("success");
-        setFeedbackMsg(
-          "Handshake Successful! Bot identity confirmed: @tariff_gift_approver_bot. Direct inline callback buttons bound.",
-        );
-        onUpdateConfig({
-          botToken: token.trim(),
-          approverChatId: chatId.trim() || "-100384725591",
-          isConnected: true,
-          botUsername: "tariff_gift_approver_bot",
-          lastSyncTime: "2026-06-20 06:35:20",
-        });
-      }
-    }, 950);
   };
 
   const handleTestPing = () => {
@@ -100,8 +48,6 @@ export default function TelegramIntegration({
 
     console.log(data);
   };
-
-  const telegramLogs = auditLogs.filter((log) => log.channel === "Telegram");
 
   return (
     <div id="telegram-integration-subpage" className="space-y-6">
@@ -122,7 +68,7 @@ export default function TelegramIntegration({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* LEFT COLUMN: SETUP CONFIGURATION PORTAL */}
         <div className="lg:col-span-7 bg-white p-6 rounded-[16px] border border-slate-200/80 shadow-sm space-y-6">
-          <form onSubmit={handleConnect} className="space-y-5">
+          {/* <form onSubmit={handleConnect} className="space-y-5">
             <div>
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2 font-mono flex items-center gap-1">
                 <Key className="w-3.5 h-3.5 text-indigo-500" />
@@ -162,7 +108,6 @@ export default function TelegramIntegration({
               </p>
             </div>
 
-            {/* DYNAMIC FEEDBACK RESPONSE MESSAGE */}
             {connectStatus === "success" && (
               <div
                 id="tg-success-feedback"
@@ -213,83 +158,7 @@ export default function TelegramIntegration({
                   : "Verify Token & Establish Webhook"}
               </button>
             </div>
-          </form>
-
-          {/* Connected bot info card specs representation */}
-          {config?.isConnected && (
-            <div className="p-4 bg-indigo-50/50 border border-indigo-100/80 rounded-[12px] space-y-3 font-mono text-[11px] leading-relaxed">
-              <div className="flex items-center gap-2 text-indigo-700 font-bold uppercase font-sans text-xs">
-                <ShieldCheck className="w-4 h-4 text-indigo-500" />
-                Active Connection Parameters Verified:
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Bound Bot Username:</span>
-                <span className="text-indigo-800 font-semibold">
-                  @{config?.botUsername}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Interactive Chat Group:</span>
-                <span className="text-indigo-800 font-semibold">
-                  {config?.approverChatId}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Last Synced Timestamp:</span>
-                <span className="text-slate-850 font-semibold">
-                  {config?.lastSyncTime || "2026-06-20 06:35:20"}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: COMPACT TELEGRAM LOG FEED */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-[16px] border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="space-y-4">
-            <h4 className="font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider font-mono text-xs">
-              <Layers className="w-4 h-4 text-slate-400 shrink-0" />
-              Telegram Dispatch Feed
-            </h4>
-            <p className="text-[11.5px] text-slate-400 leading-normal">
-              Direct log of messages sent to Telegram Bot interfaces with
-              telemetry status.
-            </p>
-
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {telegramLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="p-3 bg-slate-50 border border-slate-150 rounded-xl text-xs"
-                >
-                  <div className="flex items-center justify-between font-mono text-[9px] text-slate-400 mb-1">
-                    <span>{log.timestamp}</span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded font-bold uppercase ${
-                        log.status === "Sent"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-rose-50 text-rose-500"
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                  </div>
-                  <p className="font-bold text-slate-800">{log.action}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    {log.details}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl mt-4">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-              <Clock className="w-3.5 h-3.5 text-blue-500 shrink-0 font-bold" />
-              Telegram bot automatically dispatches a unique code to email
-              beneficiaries on successful approvals.
-            </div>
-          </div>
+          </form> */}
         </div>
       </div>
     </div>

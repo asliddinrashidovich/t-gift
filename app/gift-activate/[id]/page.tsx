@@ -2,27 +2,11 @@
 
 import React, { useState } from "react";
 import { GiftApplication } from "../../../types";
-import {
-  ShieldCheck,
-  Info,
-  Sparkles,
-  Check,
-  ArrowRight,
-  X,
-} from "lucide-react";
+import { Check, ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-interface ActivationPageProps {
-  giftApplications: GiftApplication[];
-  onActivateSuccess: (code: string) => void;
-  onNavigateHome: () => void;
-  onNavigateDashboard: () => void;
-}
-
-export default function ActivationPage({
-  onActivateSuccess,
-}: ActivationPageProps) {
+export default function ActivationPage() {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<
     "idle" | "checking" | "success" | "error"
@@ -68,6 +52,8 @@ export default function ActivationPage({
         id: data.id,
         userName: data.user_id,
         userEmail: "",
+        tariffId: data.tariffs?.id ?? data.tariff_id,
+        tariff_id: data.tariff_id,
         tariffName: data.tariffs?.name ?? "Unknown Tariff",
         status: data.status,
         appliedDate: data.created_at,

@@ -1,11 +1,10 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { Tariff, GiftApplication, UserSession, UserData } from "../types";
-import { Gift, Zap, Check, LogIn, ArrowRight } from "lucide-react";
+import { Tariff, GiftApplication } from "../types";
+import { Gift, Zap, Check } from "lucide-react";
 import Footer from "./footer";
 import { useEffect, useState } from "react";
-import { initialTariffs } from "@/data";
 import { supabase } from "@/lib/supabase/client";
 import { getStatusBadgeStyles } from "@/lib/statusBadges";
 import Navigation from "./navigation";
@@ -21,16 +20,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
-  const [tariffs, setTariffs] = useState<Tariff[]>(initialTariffs);
+  const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [giftApplications, setGiftApplications] = useState<GiftApplication[]>();
   const [userTariffs, setUserTariffs] = useState<any[]>([]);
-  const [user, setUser] = useState<UserData>();
   const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const activeTariffsOnly = tariffs?.filter((t) => t?.is_active);
+  const activeTariffsOnly = tariffs?.filter((t) => t?.is_active)
 
   const getGiftStatus = (tariffId: string) => {
     const gift = giftApplications?.find((gift) => gift.tariff_id === tariffId);
@@ -110,7 +108,6 @@ export default function LandingPage() {
       return;
     }
 
-    // telegramga yuborish
     await fetch("/api/telegram/send-approval-request", {
       method: "POST",
       headers: {
@@ -192,29 +189,6 @@ export default function LandingPage() {
     fetchUserTariffs();
   }, []);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user: userSession },
-      } = await supabase.auth.getUser();
-
-      setUser(userSession);
-    };
-
-    getUser();
-  }, []);
-
-  const handleClickBot = async () => {
-    await fetch("/api/send-telegram", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "Telegram integration ishladi 🚀",
-      }),
-    });
-  };
   return (
     <div
       id="landing-page-container"
@@ -230,7 +204,6 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             Available Tariffs
           </h2>
-          <button onClick={handleClickBot}>test</button>
         </div>
 
         {/* Database Tariffs Generation Grid */}

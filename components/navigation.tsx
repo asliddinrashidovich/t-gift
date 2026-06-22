@@ -1,13 +1,13 @@
 "use client";
 
 import { supabase } from "@/lib/supabase/client";
-import { UserData } from "@/types";
+import type { User } from "@supabase/supabase-js";
 import { ArrowRight, LogIn } from "lucide-react";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 
 function Navigation() {
-  const [user, setUser] = useState<UserData>();
+  const [user, setUser] = useState<User | null>(null);
 
   const onLogout = async () => {
     const { error } = await supabase.auth.signOut();
