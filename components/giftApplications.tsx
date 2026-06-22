@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, Check, X, ShieldAlert, Calendar, Filter } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import nodemailer from "nodemailer";
 
 export default function GiftApplications() {
   const [search, setSearch] = useState("");
@@ -97,16 +98,30 @@ export default function GiftApplications() {
     }
 
     // Email yuborish
-    await fetch("/api/send-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: userEmail,
-        code,
-      }),
-    });
+    try {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: userEmail,
+        subject: "Gift Application Approved 🎉",
+        html: `
+                <h2>Gift Application Approved 🎉</h2>
+                <p>Your activation code:</p>
+                <h1>${code}</h1>
+              `,
+      });
+
+      console.log("EMAIL SENT");
+    } catch (emailError) {
+      console.error("EMAIL ERROR:", emailError);
+    }
 
     // Telegram notification
     await fetch("/api/send-telegram", {
@@ -178,9 +193,7 @@ Code: ${code}
     <div id="gift-applications-subpage" className="space-y-6">
       {/* Title & subtitle block */}
       <div>
-        <h3 className="text-lg font-bold text-slate-900">
-          Gift applications
-        </h3>
+        <h3 className="text-lg font-bold text-slate-900">Gift applications</h3>
       </div>
 
       {/* DATA APPLICATIONS TABLE LIST */}

@@ -95,6 +95,20 @@ export default function LandingPage() {
       .eq("id", tariffId)
       .single();
 
+    // Pending application borligini tekshirish
+    const { data: existingApplication } = await supabase
+      .from("gift_applications")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (existingApplication) {
+      alert(
+        "You already have a pending gift application. Please wait for admin approval.",
+      );
+      return;
+    }
     // application yaratish
     const { data: application, error } = await supabase
       .from("gift_applications")
