@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
-  const update = await req.json();
+  try {
+    const update = await req.json();
 
-  console.log("TELEGRAM UPDATE:", update);
+    console.log("TELEGRAM UPDATE:", update);
 
-  if (update.callback_query) {
-    const data = update.callback_query.data;
+    if (!update.callback_query) {
+      return NextResponse.json({ ok: true });
+    }
 
-    const [action, applicationId] = data.split(":");
+    const callbackData = update.callback_query.data;
+
+    const [action, applicationId] = callbackData.split(":");
 
     console.log("ACTION:", action);
     console.log("APPLICATION:", applicationId);
@@ -18,6 +25,21 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+
+    // Applicationni topamiz
+    const { data: application, error: appError } = await supabase
+      .from("gift_applications")
+      .select("*")
+      .eq("id", applicationId)
+      .single();
+
+    if (appError || !application) {
+      console.error("APPLICATION ERROR:", appError);
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 }
+      );
+    }
 
     if (action === "approve") {
       const code = Math.random()
@@ -34,7 +56,31 @@ export async function POST(req: Request) {
         })
         .eq("id", applicationId);
 
-      console.log("APPROVE ERROR:", error);
+      if (error) {
+        console.error("APPROVE ERROR:", error);
+        return NextResponse.json({ error }, { status: 500 });
+      }
+
+      console.log("APPROVED SUCCESS");
+
+      // Email yuborish
+      try {
+        await resend.emails.send({
+          from: "onboarding@resend.dev", // yoki verified domain
+          to: application.email,
+          subject: "Gift Approved 🎉",
+          html: `
+            <h2>Gift Approved 🎉</h2>
+            <p>Your activation code:</p>
+            <h1>${code}</h1>
+            <p>Go to Activation page and enter this code.</p>
+          `,
+        });
+
+        console.log("EMAIL SENT:", application.email);
+      } catch (emailError) {
+        console.error("EMAIL ERROR:", emailError);
+      }
     }
 
     if (action === "reject") {
@@ -45,11 +91,20 @@ export async function POST(req: Request) {
         })
         .eq("id", applicationId);
 
-      console.log("REJECT ERROR:", error);
+      if (error) {
+        console.error("REJECT ERROR:", error);
+      }
+
+      console.log("REJECTED SUCCESS");
     }
 
     return NextResponse.json({ ok: true });
-  }
+  } catch (error) {
+    console.error("WEBHOOK ERROR:", error);
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
