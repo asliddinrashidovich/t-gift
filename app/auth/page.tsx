@@ -9,7 +9,7 @@ export default function Page() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: process.env.NEXT_PUBLIC_BASE_URL,
+        redirectTo: "https://t-gift-xy6f.vercel.app",
       },
     });
   };
