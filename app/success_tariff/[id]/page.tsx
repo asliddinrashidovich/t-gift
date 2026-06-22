@@ -100,14 +100,6 @@ export default function SuccessAccessPage() {
             <Home className="w-4 h-4 text-slate-400" />
             Go to Home Landing
           </button>
-          <button
-            id="success-dashboard-nav-btn"
-            onClick={() => router.push("/dashboard")}
-            className="w-full sm:w-auto px-6 py-3 font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-sm"
-          >
-            Enter Subscriber Dashboard
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Linear branding accent */}

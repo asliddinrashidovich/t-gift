@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { GiftApplication } from "../../../types";
+import { GiftApplication } from "../../types";
 import { Check, ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -47,6 +47,13 @@ export default function ActivationPage() {
         setErrorMessage("Activation code not found or has already been used.");
         return;
       }
+
+      await supabase
+        .from("gift_applications")
+        .update({
+          status: "activated",
+        })
+        .eq("id", data.id);
 
       const app: GiftApplication = {
         id: data.id,
@@ -180,10 +187,10 @@ export default function ActivationPage() {
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => router.push("/dashboard")}
+                    onClick={() => router.push("/")}
                     className="flex-1 py-3 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all cursor-pointer text-center"
                   >
-                    Go Back To Dashboard
+                    Go Home
                   </button>
                   <button
                     id="activation-verify-btn"

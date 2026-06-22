@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { User } from "@supabase/supabase-js";
 
 export default function LandingPage() {
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
@@ -27,8 +28,9 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
 
-  const activeTariffsOnly = tariffs?.filter((t) => t?.is_active)
+  const activeTariffsOnly = tariffs?.filter((t) => t?.is_active);
 
   const getGiftStatus = (tariffId: string) => {
     const gift = giftApplications?.find((gift) => gift.tariff_id === tariffId);
@@ -40,17 +42,11 @@ export default function LandingPage() {
     return userTariffs.some((tariff) => tariff.tariff_id == tariffId);
   };
 
-  // console.log(typeof tariff.id);
-  console.log(userTariffs);
   const handleBuyTariff = async (tariffId: string, periodMonths: number) => {
     try {
       const {
         data: { user: userSession },
       } = await supabase.auth.getUser();
-
-      if (!userSession) {
-        redirect("/auth");
-      }
 
       const activatedAt = new Date();
 
@@ -58,7 +54,7 @@ export default function LandingPage() {
       expiresAt.setMonth(expiresAt.getMonth() + periodMonths);
 
       await supabase.from("user_tariffs").insert({
-        user_id: userSession.id,
+        user_id: userSession?.id,
         tariff_id: tariffId,
         source: "purchase",
         activated_at: activatedAt.toISOString(),
@@ -72,18 +68,25 @@ export default function LandingPage() {
     }
   };
 
+  const handleGift = async (tariff: Tariff) => {
+    if (user?.email == "admin123@gmail.com") {
+      redirect("/auth");
+    } else {
+      setSelectedTariff(tariff);
+      setOpen(true);
+    }
+  };
   const handleApplyGift = async (tariffId: string) => {
     const {
       data: { user: userSession },
     } = await supabase.auth.getUser();
 
-    if (!userSession) {
+    if (user?.email == "admin123@gmail.com") {
       redirect("/auth");
-      return;
     }
 
     // user email
-    const userEmail = userSession.email;
+    const userEmail = userSession?.email;
 
     // tariff ma'lumotini olish
     const { data: tariff } = await supabase
@@ -96,7 +99,7 @@ export default function LandingPage() {
     const { data: application, error } = await supabase
       .from("gift_applications")
       .insert({
-        user_id: userSession.id,
+        user_id: userSession?.id,
         tariff_id: tariffId,
         status: "pending",
       })
@@ -121,7 +124,7 @@ export default function LandingPage() {
       }),
     });
 
-    router.push(`/gift-activate/${tariffId}`);
+    router.push(`/gift-activate`);
   };
 
   useEffect(() => {
@@ -187,6 +190,18 @@ export default function LandingPage() {
     };
 
     fetchUserTariffs();
+  }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setUser(user);
+    };
+
+    getUser();
   }, []);
 
   return (
@@ -272,10 +287,7 @@ export default function LandingPage() {
                   <button
                     disabled={activeTariff}
                     id={`buy-tariff-${tariff.id}`}
-                    onClick={() => {
-                      setSelectedTariff(tariff);
-                      setOpen(true);
-                    }}
+                    onClick={() => handleGift(tariff)}
                     className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${
                       activeTariff
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-not-allowed"
@@ -306,6 +318,13 @@ export default function LandingPage() {
                       className="w-full py-2.5 rounded-xl font-semibold text-sm bg-blue-50 text-blue-700 border border-blue-200 cursor-not-allowed"
                     >
                       Gift Approved
+                    </button>
+                  ) : status === "activated" ? (
+                    <button
+                      disabled
+                      className="w-full py-2.5 rounded-xl font-semibold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-not-allowed"
+                    >
+                      Activated
                     </button>
                   ) : (
                     <button

@@ -6,11 +6,8 @@ export default function GiftApplications() {
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [applications, setApplications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const fetchApplications = async () => {
-    setLoading(true);
-
     const { data: applicationsData, error } = await supabase.from(
       "gift_applications",
     ).select(`
@@ -25,13 +22,11 @@ export default function GiftApplications() {
 
     if (error) {
       console.error(error);
-      setLoading(false);
       return;
     }
 
     if (!applicationsData?.length) {
       setApplications([]);
-      setLoading(false);
       return;
     }
 
@@ -70,7 +65,6 @@ export default function GiftApplications() {
     });
 
     setApplications(formattedApplications);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -185,52 +179,8 @@ Code: ${code}
       {/* Title & subtitle block */}
       <div>
         <h3 className="text-lg font-bold text-slate-900">
-          Corporate Gift Approval Desk
+          Gift applications
         </h3>
-        <p className="text-xs text-slate-500">
-          Admin desk to audit, approve, or reject subsidized corporative
-          subscription packages.
-        </p>
-      </div>
-
-      {/* FILTER AND SEARCH CONTROLS */}
-      <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-[16px] shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        {/* Search input field */}
-        <div className="relative w-full md:max-w-md">
-          <input
-            id="app-search-input"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, billing email, or tariff name..."
-            className="w-full px-3.5 py-2 pl-10 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-        </div>
-
-        {/* Tab-style Horizontal Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-          <span className="text-[10.5px] font-mono uppercase tracking-wider text-slate-400 mr-2 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" />
-            FILTER STATUS:
-          </span>
-          {["All", "Pending", "Approved", "Rejected", "Activated"].map(
-            (status) => (
-              <button
-                id={`filter-btn-${status}`}
-                key={status}
-                onClick={() => setSelectedStatus(status)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border cursor-pointer ${
-                  selectedStatus === status
-                    ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                    : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50"
-                }`}
-              >
-                {status}
-              </button>
-            ),
-          )}
-        </div>
       </div>
 
       {/* DATA APPLICATIONS TABLE LIST */}

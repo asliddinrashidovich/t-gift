@@ -52,28 +52,28 @@ function Navigation() {
         </div>
 
         <div className="flex items-center gap-4">
-          {user ? (
+          {(user?.email != "admin123@gmail.com" || !user) ? (
             <div className="flex items-center gap-3 pl-2 border-slate-200">
               <button
                 id="nav-to-dashboard-btn"
-                onClick={() => redirect("/dashboard")}
+                onClick={() => redirect("/gift-activate")}
                 className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 transition-colors cursor-pointer"
               >
-                My Dashboard
+                Gift activation
               </button>
               <div className="flex items-center gap-2">
                 <img
                   src={
-                    user.user_metadata.avatar_url ||
+                    user?.user_metadata.avatar_url ||
                     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop"
                   }
                   referrerPolicy="no-referrer"
-                  alt={user.user_metadata.name || "User Avatar"}
+                  alt={user?.user_metadata.name || "User Avatar"}
                   className="w-8 h-8 rounded-full border border-blue-200 object-cover"
                 />
                 <div className="hidden lg:block text-left">
                   <p className="text-xs font-semibold text-slate-700 truncate max-w-30">
-                    {user.user_metadata.name}
+                    {user?.user_metadata.name}
                   </p>
                   <button
                     onClick={onLogout}
