@@ -69,7 +69,7 @@ export default function LandingPage() {
   };
 
   const handleGift = async (tariff: Tariff) => {
-    if (user?.email == "admin123@gmail.com") {
+    if (user?.email == "admin123@gmail.com" || !user) {
       redirect("/auth");
     } else {
       setSelectedTariff(tariff);
@@ -81,7 +81,7 @@ export default function LandingPage() {
       data: { user: userSession },
     } = await supabase.auth.getUser();
 
-    if (user?.email == "admin123@gmail.com") {
+    if (user?.email == "admin123@gmail.com" || !user) {
       redirect("/auth");
     }
 

@@ -52,7 +52,7 @@ function Navigation() {
         </div>
 
         <div className="flex items-center gap-4">
-          {(user?.email != "admin123@gmail.com" || !user) ? (
+          {(user?.email == "admin123@gmail.com" || user) ? (
             <div className="flex items-center gap-3 pl-2 border-slate-200">
               <button
                 id="nav-to-dashboard-btn"
@@ -93,14 +93,6 @@ function Navigation() {
               >
                 <LogIn className="w-4 h-4" />
                 Sign In
-              </button>
-              <button
-                id="nav-google-btn"
-                onClick={() => redirect("/auth")}
-                className="px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}
