@@ -1,32 +1,41 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   try {
     const update = await req.json();
 
-    console.log("TELEGRAM UPDATE:", update);
+    console.log("UPDATE:", update);
 
     if (!update.callback_query) {
       return NextResponse.json({ ok: true });
     }
 
-    const callbackData = update.callback_query.data;
+    const callbackQuery = update.callback_query;
+    const callbackData = callbackQuery.data;
 
     const [action, applicationId] = callbackData.split(":");
-
-    console.log("ACTION:", action);
-    console.log("APPLICATION ID:", applicationId);
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Gift application
+    // Loading spinnerni to'xtatish
+    await fetch(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          callback_query_id: callbackQuery.id,
+        }),
+      }
+    );
+
     const { data: application, error: applicationError } = await supabase
       .from("gift_applications")
       .select("*")
@@ -34,39 +43,25 @@ export async function POST(req: Request) {
       .single();
 
     if (applicationError || !application) {
-      console.error("APPLICATION ERROR:", applicationError);
+      console.error(applicationError);
 
       return NextResponse.json(
-        {
-          success: false,
-          error: "Application not found",
-        },
+        { error: "Application not found" },
         { status: 404 }
       );
     }
 
-    console.log("APPLICATION:", application);
-
-    // User profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("email, full_name")
       .eq("id", application.user_id)
       .single();
 
-    if (profileError || !profile) {
-      console.error("PROFILE ERROR:", profileError);
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Profile not found",
-        },
-        { status: 404 }
-      );
-    }
-
-    console.log("PROFILE:", profile);
+    const { data: tariff } = await supabase
+      .from("tariffs")
+      .select("name")
+      .eq("id", application.tariff_id)
+      .single();
 
     if (action === "approve") {
       const code = Math.random()
@@ -74,7 +69,7 @@ export async function POST(req: Request) {
         .substring(2, 8)
         .toUpperCase();
 
-      const { error: approveError } = await supabase
+      const { error } = await supabase
         .from("gift_applications")
         .update({
           status: "approved",
@@ -83,81 +78,96 @@ export async function POST(req: Request) {
         })
         .eq("id", applicationId);
 
-      if (approveError) {
-        console.error("APPROVE ERROR:", approveError);
+      if (error) {
+        console.error(error);
 
         return NextResponse.json(
-          {
-            success: false,
-            error: approveError.message,
-          },
+          { error: "Approve failed" },
           { status: 500 }
         );
       }
 
-      console.log("APPLICATION APPROVED");
-
+      // Email yuborish
       try {
-        const emailResult = await resend.emails.send({
-          from: "onboarding@resend.dev",
-          to: profile.email,
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: profile?.email,
           subject: "Gift Application Approved 🎉",
           html: `
-            <div style="font-family: Arial, sans-serif">
-              <h2>Gift Application Approved 🎉</h2>
-
-              <p>Hello ${profile.full_name || "User"},</p>
-
-              <p>Your gift request has been approved.</p>
-
-              <p>Your activation code:</p>
-
-              <div style="
-                font-size: 32px;
-                font-weight: bold;
-                padding: 12px;
-                background: #f5f5f5;
-                display: inline-block;
-                border-radius: 8px;
-              ">
-                ${code}
-              </div>
-
-              <p style="margin-top:20px">
-                Go to the activation page and enter this code.
-              </p>
-            </div>
+            <h2>Gift Application Approved 🎉</h2>
+            <p>Your activation code:</p>
+            <h1>${code}</h1>
           `,
         });
 
-        console.log("EMAIL RESULT:", emailResult);
-        console.log("EMAIL SENT TO:", profile.email);
+        console.log("EMAIL SENT");
       } catch (emailError) {
         console.error("EMAIL ERROR:", emailError);
       }
+
+      // Telegramdagi eski message ni update qilish
+      await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: callbackQuery.message.chat.id,
+            message_id: callbackQuery.message.message_id,
+            text: `✅ Gift Application Approved
+
+👤 User: ${profile?.email}
+
+📦 Tariff: ${tariff?.name}
+
+🔑 Code: ${code}
+
+🕒 ${new Date().toLocaleString()}
+`,
+          }),
+        }
+      );
     }
 
     if (action === "reject") {
-      const { error: rejectError } = await supabase
+      await supabase
         .from("gift_applications")
         .update({
           status: "rejected",
         })
         .eq("id", applicationId);
 
-      if (rejectError) {
-        console.error("REJECT ERROR:", rejectError);
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: rejectError.message,
+      await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          { status: 500 }
-        );
-      }
+          body: JSON.stringify({
+            chat_id: callbackQuery.message.chat.id,
+            message_id: callbackQuery.message.message_id,
+            text: `❌ Gift Application Rejected
 
-      console.log("APPLICATION REJECTED");
+👤 User: ${profile?.email}
+
+📦 Tariff: ${tariff?.name}
+
+🕒 ${new Date().toLocaleString()}
+`,
+          }),
+        }
+      );
     }
 
     return NextResponse.json({
