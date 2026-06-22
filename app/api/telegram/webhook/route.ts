@@ -19,27 +19,54 @@ export async function POST(req: Request) {
     const [action, applicationId] = callbackData.split(":");
 
     console.log("ACTION:", action);
-    console.log("APPLICATION:", applicationId);
+    console.log("APPLICATION ID:", applicationId);
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Applicationni topamiz
-    const { data: application, error: appError } = await supabase
+    // Gift application
+    const { data: application, error: applicationError } = await supabase
       .from("gift_applications")
       .select("*")
       .eq("id", applicationId)
       .single();
 
-    if (appError || !application) {
-      console.error("APPLICATION ERROR:", appError);
+    if (applicationError || !application) {
+      console.error("APPLICATION ERROR:", applicationError);
+
       return NextResponse.json(
-        { error: "Application not found" },
+        {
+          success: false,
+          error: "Application not found",
+        },
         { status: 404 }
       );
     }
+
+    console.log("APPLICATION:", application);
+
+    // User profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", application.user_id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("PROFILE ERROR:", profileError);
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Profile not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    console.log("PROFILE:", profile);
 
     if (action === "approve") {
       const code = Math.random()
@@ -47,7 +74,7 @@ export async function POST(req: Request) {
         .substring(2, 8)
         .toUpperCase();
 
-      const { error } = await supabase
+      const { error: approveError } = await supabase
         .from("gift_applications")
         .update({
           status: "approved",
@@ -56,54 +83,94 @@ export async function POST(req: Request) {
         })
         .eq("id", applicationId);
 
-      if (error) {
-        console.error("APPROVE ERROR:", error);
-        return NextResponse.json({ error }, { status: 500 });
+      if (approveError) {
+        console.error("APPROVE ERROR:", approveError);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: approveError.message,
+          },
+          { status: 500 }
+        );
       }
 
-      console.log("APPROVED SUCCESS");
+      console.log("APPLICATION APPROVED");
 
-      // Email yuborish
       try {
-        await resend.emails.send({
-          from: "onboarding@resend.dev", // yoki verified domain
-          to: application.email,
-          subject: "Gift Approved 🎉",
+        const emailResult = await resend.emails.send({
+          from: "onboarding@resend.dev",
+          to: profile.email,
+          subject: "Gift Application Approved 🎉",
           html: `
-            <h2>Gift Approved 🎉</h2>
-            <p>Your activation code:</p>
-            <h1>${code}</h1>
-            <p>Go to Activation page and enter this code.</p>
+            <div style="font-family: Arial, sans-serif">
+              <h2>Gift Application Approved 🎉</h2>
+
+              <p>Hello ${profile.full_name || "User"},</p>
+
+              <p>Your gift request has been approved.</p>
+
+              <p>Your activation code:</p>
+
+              <div style="
+                font-size: 32px;
+                font-weight: bold;
+                padding: 12px;
+                background: #f5f5f5;
+                display: inline-block;
+                border-radius: 8px;
+              ">
+                ${code}
+              </div>
+
+              <p style="margin-top:20px">
+                Go to the activation page and enter this code.
+              </p>
+            </div>
           `,
         });
 
-        console.log("EMAIL SENT:", application.email);
+        console.log("EMAIL RESULT:", emailResult);
+        console.log("EMAIL SENT TO:", profile.email);
       } catch (emailError) {
         console.error("EMAIL ERROR:", emailError);
       }
     }
 
     if (action === "reject") {
-      const { error } = await supabase
+      const { error: rejectError } = await supabase
         .from("gift_applications")
         .update({
           status: "rejected",
         })
         .eq("id", applicationId);
 
-      if (error) {
-        console.error("REJECT ERROR:", error);
+      if (rejectError) {
+        console.error("REJECT ERROR:", rejectError);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: rejectError.message,
+          },
+          { status: 500 }
+        );
       }
 
-      console.log("REJECTED SUCCESS");
+      console.log("APPLICATION REJECTED");
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      success: true,
+    });
   } catch (error) {
     console.error("WEBHOOK ERROR:", error);
 
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        success: false,
+        error: String(error),
+      },
       { status: 500 }
     );
   }
