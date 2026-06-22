@@ -59,15 +59,20 @@ export default function TelegramIntegration() {
           Sync Telegram messenger interfaces with the central platform database
           to approve corporate gift requests inline.
         </p>
-        <button onClick={connectTelegram}>Connect Telegram</button>
       </div>
-      <input value={botToken} onChange={(e) => setBotToken(e.target.value)} />
-
-      <button onClick={saveBotToken}>Save Token</button>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* LEFT COLUMN: SETUP CONFIGURATION PORTAL */}
         <div className="lg:col-span-7 bg-white p-6 rounded-[16px] border border-slate-200/80 shadow-sm space-y-6">
+          <button onClick={connectTelegram}>Connect Telegram</button>
+
+          <input
+            className="border rounded-md"
+            value={botToken}
+            onChange={(e) => setBotToken(e.target.value)}
+          />
+
+          <button onClick={saveBotToken}>Save Token</button>
           {/* <form onSubmit={handleConnect} className="space-y-5">
             <div>
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2 font-mono flex items-center gap-1">
